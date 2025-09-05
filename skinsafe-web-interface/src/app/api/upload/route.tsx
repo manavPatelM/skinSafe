@@ -31,22 +31,31 @@ export const POST = asyncHandler(async (req) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload_stream(
-        {
-            folder: formData.get("folder")?.toString() || "uploads",
-            resource_type: "image",
-        },
-        (error, result) => {
-            if (error || !result) {
-                return NextResponse.json({ success: false, error: error?.message || "Upload failed" }, { status: 500 });
-            }
-            return NextResponse.json({ success: true, url: result.secure_url });
-        }
-    );
+    // Upload to Cloudinary using a Promise
+    const uploadToCloudinary = () =>
+        new Promise<{ secure_url: string }>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: formData.get("folder")?.toString() || "uploads",
+                    resource_type: "image",
+                },
+                (error, result) => {
+                    if (error || !result) {
+                        reject(error?.message || "Upload failed");
+                    } else {
+                        resolve(result as { secure_url: string });
+                    }
+                }
+            );
+            uploadStream.end(buffer);
+        });
 
-    // Write buffer to upload stream
-    uploadResult.end(buffer);
+    try {
+        const result = await uploadToCloudinary();
+        return NextResponse.json({ success: true, url: result.secure_url });
+    } catch (error) {
+        return NextResponse.json({ success: false, error: typeof error === "string" ? error : "Upload failed" }, { status: 500 });
+    }
 });
 
 // Return 405 for other methods
