@@ -155,7 +155,7 @@ export default function LoginPage() {
     // Check if user is already logged in
     getSession().then((session) => {
       if (session) {
-        router.push("/dashboard")
+        router.push("/")
       }
     })
   }, [router])
@@ -164,7 +164,7 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const result = await signIn("google", {
-        callbackUrl: "/dashboard",
+        callbackUrl: "/",
         redirect: false,
       })
 
