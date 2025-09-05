@@ -12,6 +12,7 @@
     "@auth/mongodb-adapter": "^3.10.0",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.7.0",
     "lucide-react": "^0.542.0",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.0",
