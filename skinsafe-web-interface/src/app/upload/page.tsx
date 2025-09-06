@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Download,
 } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -23,11 +23,12 @@ export default function UploadPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string>("");
-  const [prediction, setPrediction] = useState<any>(null);
+  const [prediction, setPrediction] = useState<any>({});
   const [currentView, setCurrentView] = useState<"upload" | "history">("upload");
   const [history, setHistory] = useState<string[]>([]);
+  const [imageUpload, setImageUpload] = useState<any>({});
 
-  // Reset upload
+  // // Reset upload
   const resetUpload = () => {
     setSelectedImage(null);
     setPrediction(null);
@@ -45,7 +46,7 @@ export default function UploadPage() {
     ];
   };
 
-  // Handle upload
+  // ✅ Upload image when file selected
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -61,12 +62,12 @@ export default function UploadPage() {
       return;
     }
 
-    // ✅ Show local preview immediately
+    // ✅ Local preview
     const localPreview = URL.createObjectURL(file);
     setSelectedImage(localPreview);
 
     setIsUploading(true);
-    setPrediction(null);
+    // setPrediction(null);
     setUploadMessage("Uploading image...");
 
     try {
@@ -74,30 +75,17 @@ export default function UploadPage() {
       formData.append("file", file);
       formData.append("userId", session?.user?.id || "guest");
 
-      const res = await axios.post("/api/upload", formData, {
+      const response = await axios.post("/api/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (!res.data.success) throw new Error(res.data.error || "Upload failed");
+      const data = await response.data;
 
-      // ✅ Replace preview URL with final uploaded URL
-      setSelectedImage(res.data.url);
-      setHistory((prev) => [res.data.url, ...prev]);
-      setUploadMessage("✅ Image uploaded successfully!");
-
-      // Call prediction API
-      const predictionRes = await fetch("/api/savePrediction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: res.data.url,
-          userId: session?.user?.id || "guest",
-        }),
-      });
-
-      if (!predictionRes.ok) throw new Error("Prediction API error");
-      const predictionData = await predictionRes.json();
-      setPrediction(predictionData.data);
+      if (data) {
+        setImageUpload(data); // 🔥 triggers useEffect
+        console.log("Upload response:", data);
+        setUploadMessage("✅ Image uploaded successfully!");
+      }
     } catch (err: any) {
       console.error("Upload error:", err);
       setUploadMessage("❌ Upload failed: " + (err.message || "Unknown error"));
@@ -106,11 +94,48 @@ export default function UploadPage() {
     }
   };
 
+  // ✅ Trigger prediction when `imageUpload` changes
+  useEffect(() => {
+    if (!imageUpload) return;
+
+    const fetchPrediction = async () => {
+      setUploadMessage("Analyzing image...");
+      try {
+        const res = await axios.post("/api/savePrediction", {
+          userId: session?.user?.id || "guest",
+        });
+
+        const data = await res.data;
+
+        if (data) {
+          setPrediction(data);
+          console.log("Prediction data:", prediction);
+          setUploadMessage("✅ Analysis complete!");
+          setSelectedImage(imageUpload.data?.url); // final uploaded URL
+          setHistory((prev) => [imageUpload.data?.url, ...prev]);
+
+        } else {
+          setPrediction(null);
+          setUploadMessage("❌ Analysis failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("Prediction error:", err);
+        setPrediction(null);
+        setUploadMessage("❌ Analysis failed. Please try again.");
+      }
+    };
+
+    fetchPrediction();
+  }, [imageUpload, session?.user?.id]);
+
   if (status === "loading") return <div>Loading...</div>;
   if (status === "unauthenticated") {
     // router.push("/login");
     return null;
   }
+
+  // ... keep rest of your JSX the same
+
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
@@ -149,6 +174,78 @@ export default function UploadPage() {
                   {uploadMessage}
                 </p>
               )}
+              {prediction?.data && (
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-8">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                    Analysis Results
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/* Primary */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6">
+                      <h4 className="font-semibold mb-4">Primary Analysis</h4>
+                      <p className="text-lg font-semibold">
+                        {prediction.data.final_prediction?.class ?? "N/A"}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Confidence:{" "}
+                        {prediction.data.final_prediction
+                          ? (prediction.data.final_prediction.confidence * 100).toFixed(1)
+                          : 0}
+                        %
+                      </p>
+                    </div>
+
+                    {/* Secondary */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6">
+                      <h4 className="font-semibold mb-4">Secondary Analysis</h4>
+                      <p className="text-lg font-semibold">
+                        {prediction.data.secondary_prediction?.class ?? "N/A"}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Confidence:{" "}
+                        {prediction.data.secondary_prediction
+                          ? (prediction.data.secondary_prediction.confidence * 100).toFixed(1)
+                          : 0}
+                        %
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Recommendations */}
+                  <div className="mb-8">
+                    <h4 className="font-semibold flex items-center">
+                      <Heart className="w-5 h-5 text-red-500 mr-2" /> Health Recommendations
+                    </h4>
+                    <ul className="space-y-3">
+                      {getHealthRecommendations(prediction).map((rec, i) => (
+                        <li key={i} className="flex items-start space-x-3">
+                          <ChevronRight className="w-4 h-4 text-blue-500 mt-0.5" />
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button
+                      // onClick={resetUpload}
+                      className="flex-1 bg-gray-200 dark:bg-gray-700 py-4 rounded-xl hover:bg-gray-300"
+                    >
+                      <RefreshCw className="w-5 h-5 inline-block mr-2" />
+                      Scan Another
+                    </button>
+                    <button
+                      onClick={() => setCurrentView("history")}
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl hover:shadow-lg"
+                    >
+                      <Download className="w-5 h-5 inline-block mr-2" />
+                      Save & View History
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           ) : (
             <div className="space-y-8">
@@ -161,7 +258,7 @@ export default function UploadPage() {
                   />
                   {!isUploading && !prediction && (
                     <button
-                      onClick={resetUpload}
+                      // onClick={resetUpload}
                       className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
                     >
                       <X className="w-4 h-4" />
@@ -184,71 +281,7 @@ export default function UploadPage() {
               )}
 
               {/* Prediction */}
-              {prediction && (
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                    Analysis Results
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6">
-                      <h4 className="font-semibold mb-4">Primary Analysis</h4>
-                      <p className="text-lg font-semibold">
-                        {prediction.final_prediction.class}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Confidence:{" "}
-                        {(prediction.final_prediction.confidence * 100).toFixed(
-                          1
-                        )}
-                        %
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6">
-                      <h4 className="font-semibold mb-4">Secondary Analysis</h4>
-                      <p className="text-lg font-semibold">
-                        {prediction.secondary_prediction.class}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Confidence:{" "}
-                        {(
-                          prediction.secondary_prediction.confidence * 100
-                        ).toFixed(1)}
-                        %
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mb-8">
-                    <h4 className="font-semibold flex items-center">
-                      <Heart className="w-5 h-5 text-red-500 mr-2" /> Health
-                      Recommendations
-                    </h4>
-                    <ul className="space-y-3">
-                      {getHealthRecommendations(prediction).map((rec, i) => (
-                        <li key={i} className="flex items-start space-x-3">
-                          <ChevronRight className="w-4 h-4 text-blue-500 mt-0.5" />
-                          <span>{rec}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                    <button
-                      onClick={resetUpload}
-                      className="flex-1 bg-gray-200 dark:bg-gray-700 py-4 rounded-xl hover:bg-gray-300"
-                    >
-                      <RefreshCw className="w-5 h-5 inline-block mr-2" />
-                      Scan Another
-                    </button>
-                    <button
-                      onClick={() => setCurrentView("history")}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl hover:shadow-lg"
-                    >
-                      <Download className="w-5 h-5 inline-block mr-2" />
-                      Save & View History
-                    </button>
-                  </div>
-                </div>
-              )}
+
             </div>
           )}
         </>
