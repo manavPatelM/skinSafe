@@ -2,6 +2,9 @@
 
 import React, { useState, useRef } from "react";
 import axios from "axios";
+import { useSession } from "next-auth/react";
+import Router from "next/router";
+import { PredictionData } from "@/types/prediction";
 
 interface ImageUploadProps {
   onImageUploaded?: (url: string) => void;
@@ -21,7 +24,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [image, setImage] = useState<string>(defaultImage);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: session } = useSession();
+  
 
+  if (!session) {
+    Router.push("/login");
+  }
+
+  const [prediction, setPrediction] = useState<PredictionData | null>(null);
+  const [predictionError, setPredictionError] = useState<string>("");
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -40,10 +51,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
 
     setIsUploading(true);
+    setPrediction(null);
+    setPredictionError("");
 
     try {
       const formData = new FormData();
       formData.append("file", file);
+      // formData.append("folder", folder);
+      formData.append("userId", session?.user?.id || "guest");
 
       const res = await axios.post("/api/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -55,6 +70,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       if (onImageUploaded) onImageUploaded(res.data.url);
 
       alert("✅ Image uploaded successfully!");
+
+      // Fetch prediction after upload
+      try {
+        const predictionRes = await fetch("/api/savePrediction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: res.data.url, userId: session?.user?.id || "guest" })
+        });
+        if (!predictionRes.ok) {
+          throw new Error("Prediction API error");
+        }
+        const predictionData = await predictionRes.json();
+        setPrediction(predictionData.data);
+        setPredictionError("");
+      } catch (predErr: any) {
+        setPrediction(null);
+        setPredictionError("Prediction failed. Please try again.");
+      }
     } catch (err: any) {
       console.error("Upload error:", err);
       alert("❌ Upload failed: " + (err.message || "Unknown error"));
@@ -62,7 +95,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setIsUploading(false);
     }
   };
-
   const handleRemove = () => {
     setImage("");
     if (onImageUploaded) onImageUploaded("");
@@ -126,6 +158,22 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           disabled={isUploading}
         />
       </div>
+
+      {/* Prediction Result UI */}
+      {predictionError && (
+        <div className="mt-4 text-red-600 text-sm">{predictionError}</div>
+      )}
+      {prediction && (
+        <div className="mt-4 p-4 border rounded bg-gray-50 dark:bg-gray-800">
+          <h3 className="font-semibold mb-2">Prediction Result</h3>
+          <div className="mt-2">
+            <strong>Final Prediction:</strong> {prediction.final_prediction?.class} ({(prediction.final_prediction?.confidence * 100).toFixed(2)}%)
+          </div>
+          <div className="mt-2">
+            <strong>Secondary Prediction:</strong> {prediction.secondary_prediction?.class} ({(prediction.secondary_prediction?.confidence * 100).toFixed(2)}%)
+          </div>
+        </div>
+      )}
     </div>
   );
 };
