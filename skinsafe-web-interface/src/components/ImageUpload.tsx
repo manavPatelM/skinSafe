@@ -84,11 +84,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         const predictionData = await predictionRes.json();
         setPrediction(predictionData.data);
         setPredictionError("");
-      } catch (predErr: any) {
+      } catch (predErr: unknown) {
         setPrediction(null);
         setPredictionError("Prediction failed. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Upload error:", err);
       alert("❌ Upload failed: " + (err.message || "Unknown error"));
     } finally {
