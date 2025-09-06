@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/navbar';
+import { useSession } from 'next-auth/react';
 export default function HomePage() {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,6 +14,8 @@ export default function HomePage() {
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  const { data: session } = useSession();
 
   const features = [
     {
@@ -66,7 +69,7 @@ export default function HomePage() {
         padding: '1rem'
       }}>
         <div style={{
-          
+
           backgroundColor: 'white',
           borderRadius: '1rem',
           maxWidth: '400px',
@@ -75,12 +78,12 @@ export default function HomePage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1f2937' }}>Sign In to SkinSafeAI</h2>
-            <button 
+            <button
               onClick={() => setIsLoginModalOpen(false)}
-              style={{ 
-                background: 'none', 
-                border: 'none', 
-                fontSize: '1.5rem', 
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
                 cursor: 'pointer',
                 color: '#9ca3af'
               }}
@@ -88,7 +91,7 @@ export default function HomePage() {
               ×
             </button>
           </div>
-          
+
           <Link href="/login" style={{ textDecoration: 'none' }}>
             <div style={{
               backgroundColor: '#2563eb',
@@ -110,10 +113,10 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
       {/* Header */}
-      
-      <Navbar  />
+
+      <Navbar />
       {/* Hero Section */}
-      <section style={{ 
+      <section style={{
         padding: '5rem 1rem',
         background: 'linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%)',
         textAlign: 'center'
@@ -127,7 +130,7 @@ export default function HomePage() {
             lineHeight: '1.1'
           }}>
             AI that sees what you can’t {' '}
-            <span style={{ 
+            <span style={{
               background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0891b2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -136,7 +139,7 @@ export default function HomePage() {
               protecting your skin, protecting you.
             </span>
           </h1>
-          
+
           <p style={{
             fontSize: '1.25rem',
             color: '#4b5563',
@@ -144,38 +147,38 @@ export default function HomePage() {
             margin: '0 auto 2rem',
             lineHeight: '1.7'
           }}>
-            Clinical decision support system powered by deep learning to assist skin cancer 
+            Clinical decision support system powered by deep learning to assist skin cancer
             in detecting and classifying skin conditions with <strong>Excellent Accuracy</strong>
           </p>
-          
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
+
+          {session && <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
             <Link href="/upload" style={{ textDecoration: 'none' }}>
-   
 
 
 
-                <button
-                  style={{
-                    backgroundColor: isHovered ? "#1e40af" : "#2563eb", // darker on hover
-                    color: "white",
-                    padding: "1rem 2rem",
-                    borderRadius: "0.5rem",
-                    border: "none",
-                    fontWeight: "600",
-                    fontSize: "1.125rem",
-                    cursor: "pointer",
-                   
-                    transition: "all 0.2s ease-in-out", // smooth animation
-                  }}
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                >
-                  🔬 Get Started 
-                </button>
-              
 
-                        </Link>
-          </div>
+              <button
+                style={{
+                  backgroundColor: isHovered ? "#1e40af" : "#2563eb", // darker on hover
+                  color: "white",
+                  padding: "1rem 2rem",
+                  borderRadius: "0.5rem",
+                  border: "none",
+                  fontWeight: "600",
+                  fontSize: "1.125rem",
+                  cursor: "pointer",
+
+                  transition: "all 0.2s ease-in-out", // smooth animation
+                }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                🔬 Get Started
+              </button>
+
+
+            </Link>
+          </div>}
 
           {/* Stats */}
           <div style={{
@@ -235,7 +238,7 @@ export default function HomePage() {
             gap: '2rem'
           }}>
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={index}
                 style={{
                   backgroundColor: 'white',
@@ -307,13 +310,13 @@ export default function HomePage() {
           }}>
             Join hundreds of healthcare providers using SkinSafeAI to improve diagnostic accuracy and patient outcomes.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button 
+          {!session && <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
               onClick={() => setIsLoginModalOpen(true)}
               style={{
                 border: "2px solid white",
-        
-                color: "white" , // text changes
+
+                color: "white", // text changes
                 backgroundColor: "#2563eb",  // blue on hover
                 padding: "1rem ",
                 borderRadius: "0.5rem",
@@ -322,25 +325,9 @@ export default function HomePage() {
                 cursor: "pointer",
               }}
             >
-              Start Free Trial
+              Start Trial
             </button>
-          <button
-      style={{
-        border: "2px solid white",
-        
-         color: "#2563eb" , // text changes
-        backgroundColor: "white",  // blue on hover
-        padding: "1rem ",
-        borderRadius: "0.5rem",
-        fontWeight: "600",
-        fontSize: "1.125rem",
-        cursor: "pointer",
-      
-      }}
-    >
-      Schedule Demo
-    </button>
-          </div>
+          </div>}
         </div>
       </section>
 
@@ -373,7 +360,7 @@ export default function HomePage() {
                 Advancing dermatology through artificial intelligence and precision medicine.
               </p>
             </div>
-            
+
             <div>
               <h4 style={{ fontWeight: '600', marginBottom: '1rem' }}>Product</h4>
               <ul style={{ listStyle: 'none', padding: 0, color: '#9ca3af' }}>
@@ -388,7 +375,7 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 style={{ fontWeight: '600', marginBottom: '1rem' }}>Company</h4>
               <ul style={{ listStyle: 'none', padding: 0, color: '#9ca3af' }}>
@@ -419,7 +406,7 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
-          
+
           <div style={{
             borderTop: '1px solid #374151',
             marginTop: '3rem',
