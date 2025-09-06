@@ -35,7 +35,15 @@ export const POST = asyncHandler(async (req) => {
     if (!res.ok) {
       return errorResponse("FastAPI error", res.status, data.detail || data);
     }
-    
+    // convert data.predict_c and data.predict_d and data.final_prediction and data.secondary_prediction to JSON
+    const jsonData = {
+      image_url: data.image_url,
+      predict_c: data.predict_c,
+      predict_d: data.predict_d,
+      final_prediction: data.final_prediction,
+      secondary_prediction: data.secondary_prediction,
+    };
+
     // Save prediction in MongoDB
     try {
       await Prediction.create({

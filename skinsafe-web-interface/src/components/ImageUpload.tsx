@@ -90,7 +90,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       }
     } catch (err: unknown) {
       console.error("Upload error:", err);
-      alert("❌ Upload failed: " + (err.message || "Unknown error"));
+      alert("❌ Upload failed: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setIsUploading(false);
     }
