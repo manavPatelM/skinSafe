@@ -1,19 +1,27 @@
 "use client"
 
 import { SessionProvider, useSession } from "next-auth/react"
-import SignIn from "@/components/sign-in"
-import Orb from "../components/orb"
+import Orb from "@/components/orb"
 import Navbar from "@/components/navbar"
 import ImageUpload from "@/components/ImageUpload"
 
 function MainContent() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+
+  if (status === "loading") {
+    return null // or a loading spinner if you want
+  }
 
   if (!session) {
-    // Not logged in → show SignIn
+    // Don't show SignIn, just a landing message
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <SignIn />
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
+        <h2 className="text-3xl bg-background text-foreground font-semibold mb-4">
+          Welcome to SkinSafe
+        </h2>
+        <p className="max-w-xl">
+          An AI-powered tool to help you monitor your skin health. Click <strong>Get Started</strong> above to log in.
+        </p>
       </div>
     )
   }
@@ -39,9 +47,7 @@ export default function Home() {
       <Navbar />
 
       {/* Background Orb */}
-      <div
-        className="fixed inset-0 -z-10"
-      >
+      <div className="fixed inset-0 -z-10">
         <Orb
           hoverIntensity={0.5}
           rotateOnHover={true}

@@ -205,9 +205,16 @@ export default function Navbar({ className = '' }: NavbarProps) {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-              SkinSafe
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent 
+               bg-gradient-to-r 
+               from-blue-800 to-purple-500 
+               dark:from-white dark:to-blue-200">
+            SkinSafe
             </h1>
+
+
+
+         
           </div>
 
           {/* Navigation Items */}
@@ -215,10 +222,23 @@ export default function Navbar({ className = '' }: NavbarProps) {
             {!session ? (
               // Not logged in
               <>
-                <a href="#features" className="text-white/80 hover:text-white transition-colors duration-200">
+               <a
+                  href="#features"
+                  className="
+                    text-black/80 hover:text-black transition-colors duration-200
+                    dark:text-white/80 dark:hover:text-white
+                  "
+                >
                   Features
                 </a>
-                <a href="#about" className="text-white/80 hover:text-white transition-colors duration-200">
+
+                <a
+                  href="#about"
+                  className="
+                    text-black/80 hover:text-black transition-colors duration-200
+                    dark:text-white/80 dark:hover:text-white
+                  "
+                >
                   About
                 </a>
                 <button
