@@ -22,23 +22,25 @@ export default function UploadPage() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string>("");
-  const [prediction, setPrediction] = useState<any>({});
+  const [prediction, setPrediction] = useState<any>(null);
   const [currentView, setCurrentView] = useState<"upload" | "history">("upload");
   const [history, setHistory] = useState<string[]>([]);
-  const [imageUpload, setImageUpload] = useState<any>({});
 
-  // // Reset upload
+  // Reset upload
   const resetUpload = () => {
     setSelectedImage(null);
     setPrediction(null);
     setUploadMessage("");
+    setIsUploading(false);
+    setIsAnalyzing(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Dummy recommendations
   const getHealthRecommendations = (prediction: any): string[] => {
-    if (!prediction) return ["No recommendation available"];
+    if (!prediction?.data) return ["No recommendation available"];
     return [
       "Keep skin hydrated",
       "Use sunscreen regularly",
@@ -46,7 +48,7 @@ export default function UploadPage() {
     ];
   };
 
-  // ✅ Upload image when file selected
+  // ✅ Upload image and trigger analysis
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,71 +64,66 @@ export default function UploadPage() {
       return;
     }
 
+    // Reset previous state
+    setPrediction(null);
+    setUploadMessage("");
+
     // ✅ Local preview
     const localPreview = URL.createObjectURL(file);
     setSelectedImage(localPreview);
 
+    // Start upload process
     setIsUploading(true);
-    // setPrediction(null);
     setUploadMessage("Uploading image...");
 
     try {
+      // Step 1: Upload image
       const formData = new FormData();
       formData.append("file", file);
       formData.append("userId", session?.user?.id || "guest");
 
-      const response = await axios.post("/api/upload", formData, {
+      const uploadResponse = await axios.post("/api/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const data = await response.data;
+      const uploadData = uploadResponse.data;
 
-      if (data) {
-        setImageUpload(data); // 🔥 triggers useEffect
-        console.log("Upload response:", data);
+      if (uploadData?.data?.url) {
+        // Update with server URL (replace local preview)
+        setSelectedImage(uploadData.data.url);
         setUploadMessage("✅ Image uploaded successfully!");
-      }
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      setUploadMessage("❌ Upload failed: " + (err.message || "Unknown error"));
-    } finally {
-      setIsUploading(false);
-    }
-  };
+        setIsUploading(false);
+        
+        // Step 2: Start analysis
+        setIsAnalyzing(true);
+        setUploadMessage("Analyzing image...");
 
-  // ✅ Trigger prediction when `imageUpload` changes
-  useEffect(() => {
-    if (!imageUpload) return;
-
-    const fetchPrediction = async () => {
-      setUploadMessage("Analyzing image...");
-      try {
-        const res = await axios.post("/api/savePrediction", {
+        const predictionResponse = await axios.post("/api/savePrediction", {
           userId: session?.user?.id || "guest",
         });
 
-        const data = await res.data;
+        const predictionData = predictionResponse.data;
 
-        if (data) {
-          setPrediction(data);
-          console.log("Prediction data:", prediction);
+        if (predictionData) {
+          setPrediction(predictionData);
           setUploadMessage("✅ Analysis complete!");
-          setSelectedImage(imageUpload.data?.url); // final uploaded URL
-          setHistory((prev) => [imageUpload.data?.url, ...prev]);
-
+          // Add to history
+          setHistory((prev) => [uploadData.data.url, ...prev]);
         } else {
-          setPrediction(null);
           setUploadMessage("❌ Analysis failed. Please try again.");
         }
-      } catch (err) {
-        console.error("Prediction error:", err);
-        setPrediction(null);
-        setUploadMessage("❌ Analysis failed. Please try again.");
+      } else {
+        throw new Error("Upload failed - no URL returned");
       }
-    };
-
-    fetchPrediction();
-  }, [imageUpload, session?.user?.id]);
+    } catch (err: any) {
+      console.error("Upload/Analysis error:", err);
+      setUploadMessage("❌ Process failed: " + (err.message || "Unknown error"));
+      // Keep local preview on error
+    } finally {
+      setIsUploading(false);
+      setIsAnalyzing(false);
+    }
+  };
 
   if (status === "loading") return <div>Loading...</div>;
   if (status === "unauthenticated") {
@@ -134,14 +131,12 @@ export default function UploadPage() {
     return null;
   }
 
-  // ... keep rest of your JSX the same
-
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-700">
       {currentView === "upload" && (
         <>
           {!selectedImage ? (
+            /* UPLOAD SECTION */
             <div className="text-center">
               <label htmlFor="file-upload" className="block cursor-pointer">
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-12 hover:border-blue-500 dark:hover:border-blue-400 transition-colors">
@@ -165,16 +160,59 @@ export default function UploadPage() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleFileUpload}
                 className="hidden"
-                disabled={isUploading}
+                disabled={isUploading || isAnalyzing}
               />
 
-              {/* ✅ Upload status */}
+              {/* Upload status */}
               {uploadMessage && (
                 <p className="mt-4 text-sm font-medium text-gray-700 dark:text-gray-300">
                   {uploadMessage}
                 </p>
               )}
-              {prediction?.data && (
+            </div>
+          ) : (
+            /* IMAGE PREVIEW & RESULTS SECTION */
+            <div className="space-y-8">
+              <div className="text-center">
+                <div className="relative inline-block">
+                  <img
+                    src={selectedImage}
+                    alt="Uploaded"
+                    className="w-80 h-80 object-cover rounded-2xl shadow-lg"
+                  />
+                  {!isUploading && !isAnalyzing && (
+                    <button
+                      onClick={resetUpload}
+                      className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Loading States */}
+              {(isUploading || isAnalyzing) && (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {isUploading ? "Uploading..." : "Analyzing Your Skin..."}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {isUploading ? "Saving your image" : "Our AI is processing your image"}
+                  </p>
+                </div>
+              )}
+
+              {/* Status Message */}
+              {uploadMessage && (
+                <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {uploadMessage}
+                </p>
+              )}
+
+              {/* PREDICTION RESULTS - NOW PROPERLY POSITIONED */}
+              {prediction?.data && !isUploading && !isAnalyzing && (
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-8">
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                     Analysis Results
@@ -213,7 +251,7 @@ export default function UploadPage() {
 
                   {/* Recommendations */}
                   <div className="mb-8">
-                    <h4 className="font-semibold flex items-center">
+                    <h4 className="font-semibold flex items-center mb-4">
                       <Heart className="w-5 h-5 text-red-500 mr-2" /> Health Recommendations
                     </h4>
                     <ul className="space-y-3">
@@ -229,15 +267,15 @@ export default function UploadPage() {
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                     <button
-                      // onClick={resetUpload}
-                      className="flex-1 bg-gray-200 dark:bg-gray-700 py-4 rounded-xl hover:bg-gray-300"
+                      onClick={resetUpload}
+                      className="flex-1 bg-gray-200 dark:bg-gray-700 py-4 rounded-xl hover:bg-gray-300 transition-colors"
                     >
                       <RefreshCw className="w-5 h-5 inline-block mr-2" />
                       Scan Another
                     </button>
                     <button
                       onClick={() => setCurrentView("history")}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl hover:shadow-lg"
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl hover:shadow-lg transition-all"
                     >
                       <Download className="w-5 h-5 inline-block mr-2" />
                       Save & View History
@@ -245,43 +283,6 @@ export default function UploadPage() {
                   </div>
                 </div>
               )}
-
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="text-center">
-                <div className="relative inline-block">
-                  <img
-                    src={selectedImage}
-                    alt="Uploaded"
-                    className="w-80 h-80 object-cover rounded-2xl shadow-lg"
-                  />
-                  {!isUploading && !prediction && (
-                    <button
-                      // onClick={resetUpload}
-                      className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Loader */}
-              {isUploading && (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Analyzing Your Skin...
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Our AI is processing your image
-                  </p>
-                </div>
-              )}
-
-              {/* Prediction */}
-
             </div>
           )}
         </>
@@ -309,7 +310,7 @@ export default function UploadPage() {
           )}
           <button
             onClick={() => setCurrentView("upload")}
-            className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
+            className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
           >
             ⬅ Back to Upload
           </button>
