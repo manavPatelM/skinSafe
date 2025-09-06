@@ -108,7 +108,7 @@ export default function UploadPage() {
 
   if (status === "loading") return <div>Loading...</div>;
   if (status === "unauthenticated") {
-    router.push("/login");
+    // router.push("/login");
     return null;
   }
 

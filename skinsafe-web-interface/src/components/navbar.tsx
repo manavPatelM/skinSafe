@@ -103,7 +103,7 @@ export default function Navbar({ className = '' }: NavbarProps) {
                       </div>
                       
                       <div className="py-2">
-                        <button
+                        {/* <button
                           onClick={handleProfile}
                           className="w-full text-left px-4 py-2 text-white/80 hover:text-white hover:bg-white/5 transition-colors duration-200 flex items-center space-x-2"
                         >
@@ -112,7 +112,7 @@ export default function Navbar({ className = '' }: NavbarProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
                           <span>Settings</span>
-                        </button>
+                        </button> */}
                         
                         <button
                           onClick={handleSignOut}

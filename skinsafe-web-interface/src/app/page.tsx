@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/navbar';
-
 export default function HomePage() {
+  const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -19,7 +19,7 @@ export default function HomePage() {
       icon: "🔬",
       title: "AI-Powered Analysis",
       description: "Deep learning algorithms trained on over 100,000 dermatological images for precise skin condition detection.",
-      accuracy: "96.3%"
+      accuracy: "Good"
     },
     {
       icon: "⚡",
@@ -27,12 +27,12 @@ export default function HomePage() {
       description: "Get comprehensive skin analysis results in under 30 seconds with detailed risk categorization.",
       accuracy: "< 30s"
     },
-    {
-      icon: "🏥",
-      title: "Clinical Grade",
-      description: "FDA-compliant analysis designed to assist healthcare professionals in clinical decision making.",
-      accuracy: "FDA Ready"
-    },
+    // {
+    //   icon: "🏥",
+    //   title: "Clinical Grade",
+    //   description: "FDA-compliant analysis designed to assist healthcare professionals in clinical decision making.",
+    //   accuracy: "FDA Ready"
+    // },
     {
       icon: "📊",
       title: "Risk Assessment",
@@ -42,7 +42,7 @@ export default function HomePage() {
   ];
 
   const stats = [
-    { number: "96.3", label: "Accuracy Rate", suffix: "%" },
+    { number: "Good", label: "Accuracy Rate", suffix: "" },
     { number: "100K", label: "Images Analyzed", suffix: "+" },
     { number: "500", label: "Healthcare Providers", suffix: "+" },
     { number: "30", label: "Analysis Time", suffix: "s" }
@@ -66,6 +66,7 @@ export default function HomePage() {
         padding: '1rem'
       }}>
         <div style={{
+          
           backgroundColor: 'white',
           borderRadius: '1rem',
           maxWidth: '400px',
@@ -125,14 +126,14 @@ export default function HomePage() {
             marginBottom: '1.5rem',
             lineHeight: '1.1'
           }}>
-            AI-Powered Dermatology for{' '}
+            AI that sees what you can’t {' '}
             <span style={{ 
               background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0891b2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
             }}>
-              Precision Medicine
+              protecting your skin, protecting you.
             </span>
           </h1>
           
@@ -143,25 +144,37 @@ export default function HomePage() {
             margin: '0 auto 2rem',
             lineHeight: '1.7'
           }}>
-            Clinical decision support system powered by deep learning to assist dermatologists 
-            in detecting and classifying skin conditions with <strong>96.3% accuracy</strong>
+            Clinical decision support system powered by deep learning to assist skin cancer 
+            in detecting and classifying skin conditions with <strong>Excellent Accuracy</strong>
           </p>
           
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
             <Link href="/upload" style={{ textDecoration: 'none' }}>
-            <button style={{
-              backgroundColor: '#2563eb',
-              color: 'white',
-              padding: '1rem 2rem',
-              borderRadius: '0.5rem',
-              border: 'none',
-              fontWeight: '600',
-              fontSize: '1.125rem',
-              cursor: 'pointer'
-            }}>
-              🔬 Try 
-            </button>
-            </Link>
+   
+
+
+
+                <button
+                  style={{
+                    backgroundColor: isHovered ? "#1e40af" : "#2563eb", // darker on hover
+                    color: "white",
+                    padding: "1rem 2rem",
+                    borderRadius: "0.5rem",
+                    border: "none",
+                    fontWeight: "600",
+                    fontSize: "1.125rem",
+                    cursor: "pointer",
+                   
+                    transition: "all 0.2s ease-in-out", // smooth animation
+                  }}
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                >
+                  🔬 Get Started 
+                </button>
+              
+
+                        </Link>
           </div>
 
           {/* Stats */}
@@ -212,7 +225,7 @@ export default function HomePage() {
               maxWidth: '768px',
               margin: '0 auto'
             }}>
-              Experience the future of dermatological analysis with our state-of-the-art AI technology
+              Experience the future of Skin Cancer analysis with our state-of-the-art AI technology
             </p>
           </div>
 
@@ -298,30 +311,35 @@ export default function HomePage() {
             <button 
               onClick={() => setIsLoginModalOpen(true)}
               style={{
-                backgroundColor: 'white',
-                color: '#2563eb',
-                padding: '1rem 2rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                fontWeight: '600',
-                fontSize: '1.125rem',
-                cursor: 'pointer'
+                border: "2px solid white",
+        
+                color: "white" , // text changes
+                backgroundColor: "#2563eb",  // blue on hover
+                padding: "1rem ",
+                borderRadius: "0.5rem",
+                fontWeight: "600",
+                fontSize: "1.125rem",
+                cursor: "pointer",
               }}
             >
               Start Free Trial
             </button>
-            <button style={{
-              border: '2px solid white',
-              color: 'white',
-              backgroundColor: 'transparent',
-              padding: '1rem 2rem',
-              borderRadius: '0.5rem',
-              fontWeight: '600',
-              fontSize: '1.125rem',
-              cursor: 'pointer'
-            }}>
-              Schedule Demo
-            </button>
+          <button
+      style={{
+        border: "2px solid white",
+        
+         color: "#2563eb" , // text changes
+        backgroundColor: "white",  // blue on hover
+        padding: "1rem ",
+        borderRadius: "0.5rem",
+        fontWeight: "600",
+        fontSize: "1.125rem",
+        cursor: "pointer",
+      
+      }}
+    >
+      Schedule Demo
+    </button>
           </div>
         </div>
       </section>

@@ -287,7 +287,7 @@ export default function LoginPage() {
                 Welcome Back
               </CardTitle>
               <CardDescription className="text-gray-600 text-lg">
-                Sign in to access your <span className="font-semibold text-blue-700">AI-powered dermatology</span> dashboard
+                Sign in to access your <span className="font-semibold text-blue-700">AI-powered Skin Cancer</span> dashboard
               </CardDescription>
             </CardHeader>
 
@@ -361,7 +361,7 @@ export default function LoginPage() {
         {/* Bottom decorative text */}
         <div className="mt-12 text-center">
           <p className="text-gray-500 text-sm max-w-md">
-            Trusted by <span className="font-semibold text-blue-700">500+ healthcare providers</span> worldwide for AI-powered dermatological analysis
+            Trusted by <span className="font-semibold text-blue-700">500+ healthcare providers</span> worldwide for AI-powered Skin Cancer analysis
           </p>
         </div>
       </div>
